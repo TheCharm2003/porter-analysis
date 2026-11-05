@@ -11,10 +11,10 @@ st.set_page_config(page_title="Recruitment · Porter", page_icon="🧲", layout=
 page_style()
 q_all, c_all, rec = load_recruitment()
 
-# ------------------------------------------------------------------ sidebar
+# Sidebar
 sb = st.sidebar
 sb.header("Filters")
-sb.caption("Empty = all. Requisition filters also apply to their candidates.")
+sb.caption("Empty = all.")
 months = sorted(q_all["Req Month"].dropna().unique())
 m0, m1 = sb.select_slider("Req raised month", options=months, value=(months[0], months[-1]))
 REQ_DIMS = {"Thread": None, "Function": None, "Grade": GRADE_ORDER, "Location": None, "Recruiter": None,
@@ -44,7 +44,7 @@ if q.empty:
     st.warning("No requisitions match these filters.")
     st.stop()
 
-# ------------------------------------------------------------------ KPIs
+# KPIs
 open_q = q[q["Req Status"] == "Open"]
 k = st.columns(4)
 k2 = st.columns(4)
@@ -63,7 +63,7 @@ k2[3].metric("Joiners", int(c["Joined"].sum()))
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["Monthly trends", "Drill-down", "Funnel & sources", "Where time goes",
                                          "Recruiters & interviewers"])
 
-# ------------------------------------------------------------------ trends
+# trends
 with tab1:
     raised = q.groupby("Req Month").size().rename("Reqs raised")
     acc = c[c["Offer Accepted"]].assign(m=lambda d: d["Offer Response On"].dt.to_period("M").astype(str)) \
@@ -98,7 +98,7 @@ with tab1:
                                          "Open - Within SLA": "#9AC5F4", "On Hold / Archived": "#C9D1D9"})
         st.plotly_chart(plotly_layout(fig, 340), width="stretch")
 
-# ------------------------------------------------------------------ drill-down
+# Drill-down
 with tab2:
     dims = ["Thread", "Function", "Grade", "Location", "Recruiter", "Criticality", "Position Type", "Job Family",
             "Hire Source", "Hiring Manager"]
@@ -147,7 +147,7 @@ with tab2:
         st.dataframe(sub[cols].sort_values("Age (days)", ascending=False), width="stretch", hide_index=True)
         st.download_button("Download CSV", sub[cols].to_csv(index=False), f"reqs_{d1}_{seg}.csv")
 
-# ------------------------------------------------------------------ funnel & sources
+# funnel & sources
 with tab3:
     c1, c2 = st.columns([1, 1.2])
     with c1:
@@ -197,7 +197,7 @@ with tab3:
                  color_discrete_map={"Accepted": C_POS, "Declined": C_NEG, "Backed out": C_MID, "Pending": "#C9D1D9"})
     st.plotly_chart(plotly_layout(fig, 320), width="stretch")
 
-# ------------------------------------------------------------------ where time goes
+# time goes
 with tab4:
     hired = c[c["Candidate ID"].isin(f["Hired Candidate"])]
     steps = [("Req raised → hire applied", "Req Raised On", "Applied On"),
@@ -241,7 +241,7 @@ with tab4:
         fig.update_layout(title=title, yaxis_title="Median TTF (days)")
         box.plotly_chart(plotly_layout(fig, 320, legend=False), width="stretch")
 
-# ------------------------------------------------------------------ recruiters & interviewers
+# recruiters & interviewers
 with tab5:
     acc = c[c["Offer Accepted"]].assign(Month=lambda d: d["Offer Response On"].dt.to_period("M").astype(str))
     a = acc.groupby(["Recruiter", "Month"]).size().rename("Accepted").reset_index()

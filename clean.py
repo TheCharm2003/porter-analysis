@@ -1,7 +1,6 @@
 """
 Reads the two raw Excel exports and writes tidy CSVs to ./clean/ plus a
-data-quality register recording every issue, the number of
-rows affected, and how it was treated.
+data-quality register recording every issue.
 """
 
 import re
@@ -32,7 +31,7 @@ def log(dataset, table, issue, n, treatment):
     print(f"[{dataset}/{table}] {issue}: {n} -> {treatment}")
 
 
-# --------------------------------------------------------------------------- helpers
+# Helpers Functions
 def clean_id(s):
     return s.astype("string").str.strip().str.upper()
 
@@ -121,7 +120,7 @@ def norm_grade(s):
     return s.map(one)
 
 
-# =========================================================================== eNPS FILE
+# eNPS FILE
 D = "Employee & eNPS"
 em = pd.read_excel(RAW_ENPS, "Employee_Master")
 raw_em_n = len(em)
@@ -230,7 +229,7 @@ for w, (start, _) in WAVES.items():
     em[f"Eligible {w}"] = (em["Date of Joining"] <= start) & (em["Date of Exit"].isna() | (em["Date of Exit"] >= start))
 em["Exit Month"] = em["Date of Exit"].dt.to_period("M").astype("string")
 
-# ------------------------------------------------------------------ eNPS responses
+# eNPS responses
 r = pd.read_excel(RAW_ENPS, "eNPS_Responses")
 r.columns = ["Response ID", "Employee ID", "Survey Wave", "Submitted On", "Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Comment"]
 raw_r_n = len(r)
@@ -327,7 +326,7 @@ em.to_csv(OUT / "employees.csv", index=False)
 r.to_csv(OUT / "enps_responses.csv", index=False)
 print(f"Employees {raw_em_n} -> {len(em)} ; responses {raw_r_n} -> {len(r)}")
 
-# =========================================================================== RECRUITMENT FILE
+# RECRUITMENT FILE
 D = "Recruitment"
 q = pd.read_excel(RAW_REC, "Requisitions")
 q["Req ID"] = q["Req ID"].str.strip().str.upper()
@@ -377,7 +376,7 @@ log(D, "Requisitions", "Replacement reqs whose replaced employee is not in Emplo
     "Kept; per dictionary these employees exited before 01-Apr-2026")
 q["Replaced Employee ID"] = clean_id(q["Replaced Employee ID"])
 
-# ------------------------------------------------------------------ candidates
+# candidates
 c = pd.read_excel(RAW_REC, "Candidates")
 raw_c_n = len(c)
 n = c.duplicated().sum()
@@ -485,7 +484,7 @@ c["Reached Offer"] = c["Offer Released On"].notna()
 c["Offer Accepted"] = c["Offer Status"] == "Accepted"
 c["Joined"] = (c["Candidate Status"] == "Joined") | c["Actual DOJ"].notna()
 
-# ------------------------------------------------------------------ req-level metrics
+# req-level metrics
 acc = c[c["Offer Accepted"] & ~c["Candidate Status"].isin(["Not Joined - Backed Out"])]
 # hired candidate = joined, else accepted & yet to join; take the earliest acceptance among them
 acc = acc.assign(pri=np.where(acc["Joined"], 0, 1)).sort_values(["Req ID", "pri", "Offer Response On"])

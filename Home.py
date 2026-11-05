@@ -1,13 +1,11 @@
 import streamlit as st
+from lib import load_enps, load_recruitment, page_style, enps
 
-from lib import load_dq, load_enps, load_recruitment, page_style, enps
-
-st.set_page_config(page_title="Porter People Analytics", page_icon="📊", layout="wide")
+st.set_page_config(page_title="PorterAnalytics", layout="wide")
 page_style()
 
 st.title("Porter People Analytics")
-st.caption("Employee sentiment (eNPS pulse, Apr vs Oct 2026) and Talent Acquisition performance (FY26 requisitions). "
-           "Synthetic data, as of 31-Oct-2026.")
+st.caption("Employee sentiment (eNPS pulse, Apr vs Oct 2026) and Talent Acquisition performance (FY26 requisitions).")
 
 r, e = load_enps()
 q, c, rec = load_recruitment()
