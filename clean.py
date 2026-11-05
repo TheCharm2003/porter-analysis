@@ -1,12 +1,9 @@
 """
-Porter People Analytics case - data cleaning pipeline.
-
 Reads the two raw Excel exports and writes tidy CSVs to ./clean/ plus a
-data-quality register (clean/dq_log.csv) recording every issue, the number of
+data-quality register recording every issue, the number of
 rows affected, and how it was treated.
-
-Run:  python clean.py
 """
+
 import re
 from pathlib import Path
 
