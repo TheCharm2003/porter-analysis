@@ -37,7 +37,7 @@ e = apply_filters(e_all, {k: v for k, v in sel.items() if k in HR_DIMS})
 active = {k: v for k, v in sel.items() if v}
 ftxt = "; ".join(f"{k}: {', '.join(map(str, v))}" for k, v in active.items()) if active else "All employees"
 topbar("Employee sentiment", "eNPS pulse · April vs October 2026 · " + ftxt,
-       [(f"{len(active)} filter(s) active", "blue" if active else "")])
+       [])
 
 if r.empty:
     st.warning("No responses match these filters.")

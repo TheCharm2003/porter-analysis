@@ -38,7 +38,7 @@ if src_sel:
 txt = f"Reqs raised {m0} → {m1}"
 txt += " · " + ("; ".join(f"{k}: {', '.join(map(str, v))}" for k, v in active.items()) if active else "all requisitions")
 topbar("Recruitment performance", txt,
-       [(f"{len(active)} filter(s) active", "blue" if active else "")])
+       [])
 if q.empty:
     st.warning("No requisitions match these filters.")
     st.stop()
