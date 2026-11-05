@@ -1,0 +1,62 @@
+dataset,table,issue,rows_affected,treatment
+Employee & eNPS,Employee_Master,Employee ID with leading/trailing spaces or lower-case 'emp',26,Trimmed and upper-cased
+Employee & eNPS,Employee_Master,"Duplicate Employee ID rows (exact copies + conflicting versions, e.g. differing Location)",12,8 exact duplicates dropped; for conflicting versions kept the row with the latest 'Record Updated On'
+Employee & eNPS,Employee_Master,Thread: inconsistent spellings / case / whitespace,91,Mapped to canonical values
+Employee & eNPS,Employee_Master,Location: inconsistent spellings / case / whitespace,82,Mapped to canonical values
+Employee & eNPS,Employee_Master,"Grade in mixed formats ('g3', 'Grade 3', '3', 'Trainee')",131,"Standardised to TBA, G1..G10"
+Employee & eNPS,Employee_Master,Location Type blank,26,"Derived from Location (Bengaluru HO = HO, else City)"
+Employee & eNPS,Employee_Master,'Bengaluru' (city hub) vs 'Bengaluru HO',76,"Kept separate: these rows are tagged Location Type = City, so treated as the Bengaluru city hub, not HO"
+Employee & eNPS,Employee_Master,"Date of Joining stored as text in mixed formats (dd/mm/yyyy, yyyy-mm-dd, dd-Mon-yy)",117,"Parsed to dates (dd/mm assumed, Indian convention)"
+Employee & eNPS,Employee_Master,"Date of Exit stored as text in mixed formats (dd/mm/yyyy, yyyy-mm-dd, dd-Mon-yy)",19,"Parsed to dates (dd/mm assumed, Indian convention)"
+Employee & eNPS,Employee_Master,"Annual CTC as text ('4,48,000', '2.96 LPA', '8.44 L', '3.64 Lakhs')",102,"Converted to numeric INR (lakh notations x 100,000)"
+Employee & eNPS,Employee_Master,Employment Status in mixed case / trailing spaces,39,Standardised to Active / Exited
+Employee & eNPS,Employee_Master,"Status 'Active' but has an exit date, exit type and classification",4,Recoded to Exited (exit date is on/before 31-Oct-2026; HRMS status not updated)
+Employee & eNPS,Employee_Master,Status 'Exited' but no Date of Exit,3,Kept as Exited; exit month unknown so excluded from exit trends; treated as eligible for both waves
+Employee & eNPS,Employee_Master,Rating blank or 'New Joiner' (vs 'Not Rated - New Joiner'),232,"Recoded to 'Not Rated - New Joiner' (all are joiners on/after 01-Jan-2026, per dictionary)"
+Employee & eNPS,Employee_Master,Joiner after 01-Jan-2026 carrying a performance rating,1,"Flagged, left as is (could be a DOJ error)"
+Employee & eNPS,Employee_Master,Manager Effective From earlier than Date of Joining,0,Set to Date of Joining
+Employee & eNPS,Employee_Master,Reporting Manager ID not found in Employee_Master,6,"Kept (manager may sit outside this export, e.g. left before Apr-2026)"
+Employee & eNPS,Pay_Bands,"Two band sets (FY25 eff. 01-Apr-2025, FY26 eff. 01-Apr-2026, mids ~+6%)",44,Compa-ratio uses the band in force on the data date (01-Apr-2026 set) for all employees
+Employee & eNPS,Employee_Master,Annual CTC blank,11,Left blank; excluded from pay metrics only
+Employee & eNPS,Employee_Master,"CTC below INR 1.5L (e.g. 38,700 for a G2) - monthly figure keyed in annual field",6,Multiplied by 12 (result lands inside the grade band in every case)
+Employee & eNPS,Employee_Master,CTC still implausible for grade (compa-ratio <0.4 or >2.5; e.g. G7 at INR 2.95L),1,Set to blank (unit unclear)
+Employee & eNPS,eNPS_Responses,Employee ID with spaces / lower case,25,"Trimmed, upper-cased"
+Employee & eNPS,eNPS_Responses,"Survey Wave in 8 spellings (Apr-2026, April'26, apr 2026, Apr, Oct 2026, ...)",716,Mapped to Apr-2026 / Oct-2026
+Employee & eNPS,eNPS_Responses,"Test submissions (TEST001, TEST002, HRTEST)",3,Removed
+Employee & eNPS,eNPS_Responses,Employee ID not in Employee_Master (EMP99xxx series),6,Removed - cannot be attributed to an invited employee
+Employee & eNPS,eNPS_Responses,Submitted outside the wave window,0,None found
+Employee & eNPS,eNPS_Responses,Q1 entered as 'x/10' text,14,Converted to number
+Employee & eNPS,eNPS_Responses,"Q1 out of 0-10 range (-1, 11, 12)",9,Set to blank (not capped - intent unknown)
+Employee & eNPS,eNPS_Responses,Q1 blank,9,Excluded from eNPS denominator only; Q2-Q6 retained
+Employee & eNPS,eNPS_Responses,Blank Q2-Q6 items,40,Left blank; item averages use available answers
+Employee & eNPS,eNPS_Responses,"Same employee submitted twice in a wave (re-submission, IDs like R501938 / R5019387)",28,Kept the latest submission per employee per wave
+Employee & eNPS,eNPS_Responses,Response from employee not active on the wave open date (joined after / exited before),6,Removed (not invited per README)
+Recruitment,Requisitions,Thread: inconsistent spellings / case / whitespace,15,Mapped to canonical values
+Recruitment,Requisitions,Location: inconsistent spellings / case / whitespace,0,Mapped to canonical values
+Recruitment,Requisitions,Req Raised On as dd/mm/yyyy text,12,Parsed to dates
+Recruitment,Requisitions,"Recruiter names abbreviated / case variants ('Rhea', 'Divya M', 'rhea kapoor')",24,Mapped to Recruiters master (first name / first + initial match is unique)
+Recruitment,Requisitions,"Req Status variants ('Closed-Joined', 'Joined', 'OPEN', 'Hold')",20,Mapped to Open / Offer Accepted / Closed - Joined / On Hold / Archived
+Recruitment,Requisitions,Criticality blank,9,Derived from README rule
+Recruitment,Requisitions,Criticality conflicts with README rule,0,Overwritten with rule-based value
+Recruitment,Requisitions,SLA (Days) conflicts with grade rule,0,Overwritten with rule-based SLA
+Recruitment,Requisitions,Replacement reqs whose replaced employee is not in Employee_Master,28,Kept; per dictionary these employees exited before 01-Apr-2026
+Recruitment,Candidates,Exact duplicate candidate rows,22,Dropped
+Recruitment,Candidates,Req ID missing 'REQ_' prefix (numeric only),805,Prefix added
+Recruitment,Candidates,Candidates on REQ_4xxx requisitions not in Requisitions (raised before FY26 scope),36,Removed - out of scope (no req attributes to analyse)
+Recruitment,Candidates,"Source in 21 spellings (Vendor/Consultant = Agency, Website = Careers Page, LI = LinkedIn)",690,Mapped to 6 channels
+Recruitment,Candidates,Agency-sourced candidate without Agency Name,0,Agency Name = 'Unknown agency'
+Recruitment,Candidates,Applied On as text (mixed formats; Offer Released On includes Excel serials like '46209'),230,Parsed to dates
+Recruitment,Candidates,R1 Interview Date as text (mixed formats; Offer Released On includes Excel serials like '46209'),46,Parsed to dates
+Recruitment,Candidates,Offer Released On as text (mixed formats; Offer Released On includes Excel serials like '46209'),9,Parsed to dates
+Recruitment,Candidates,Actual DOJ as text (mixed formats; Offer Released On includes Excel serials like '46209'),6,Parsed to dates
+Recruitment,Candidates,Expected CTC (INR) in LPA text ('5.9 LPA'),90,Converted to INR
+Recruitment,Candidates,"Notice Period as text ('2 months', 'Immediate', '30 days')",345,Converted to days (1 month = 30)
+Recruitment,Candidates,"Candidate Status variants ('Rejected-Profile', 'Profile Reject', 'R1 Reject', 'joined')",94,Mapped to canonical statuses
+Recruitment,Candidates,Status 'Joined' with no Actual DOJ (after removing out-of-scope reqs),0,Kept as joined; DOJ unknown
+Recruitment,Candidates,Stage dates out of order (later stage dated before earlier stage),16,Flagged (column 'Date Order Issue'); excluded from stage-duration metrics where negative
+Recruitment,Candidates,Applied before the requisition was raised,0,Kept (possible talent-pool tagging); applied->stage timings use Applied On as is
+Recruitment,Candidates,R1 feedback dated before the interview,0,Feedback lag set to blank for these
+Recruitment,Candidates,Requisitions with more than one joiner,0,TTF uses the first joiner; extra joiners kept in candidate counts
+Recruitment,Requisitions,Status Closed/Offer Accepted but no accepted candidate in Candidates,0,Kept status; TTF blank
+Recruitment,Requisitions,ATS 'SLA Status (System)' disagrees with SLA recomputed from README TTF definition,14,Used recomputed status throughout; system field kept for reference
+Recruitment,Requisitions,SLA Status (System) blank,8,Recomputed
