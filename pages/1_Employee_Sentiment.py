@@ -8,7 +8,7 @@ from lib import (C_APR, C_MID, C_NEG, C_OCT, C_POS, COMPA_ORDER, GRADE_ORDER, MI
                  WAVE_COLORS, apply_filters, enps, enps_table, hbar, hero, load_enps, multiselect_filter, page_style,
                  label_positions, plotly_layout, section, sort_segments, stat, summary, tone, topbar)
 
-st.set_page_config(page_title="Employee Sentiment · Porter", page_icon="💬", layout="wide")
+st.set_page_config(page_title="Employee Sentiment", layout="wide")
 page_style()
 r_all, e_all = load_enps()
 

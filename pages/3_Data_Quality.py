@@ -2,7 +2,7 @@ import streamlit as st
 
 from lib import hero, load_dq, page_style, topbar
 
-st.set_page_config(page_title="Data Quality · Porter", page_icon="🧹", layout="wide")
+st.set_page_config(page_title="Data Quality",layout="wide")
 page_style()
 dq = load_dq()
 

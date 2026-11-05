@@ -2,7 +2,7 @@ import streamlit as st
 
 from lib import enps, hero, load_dq, load_enps, load_recruitment, page_style, section, stat, summary, tone, topbar
 
-st.set_page_config(page_title="Porter People Analytics", page_icon="📊", layout="wide")
+st.set_page_config(page_title="Porter People Analytics", layout="wide")
 page_style()
 
 r, e = load_enps()

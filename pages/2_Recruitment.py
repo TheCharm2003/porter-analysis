@@ -7,7 +7,7 @@ import streamlit as st
 from lib import (C_APR, C_MID, C_NEG, C_OCT, C_POS, C_TEAL, GRADE_ORDER, NAVY, apply_filters, hbar, hero,
                  load_recruitment, multiselect_filter, page_style, label_positions, plotly_layout, section, sort_segments, stat, summary, topbar)
 
-st.set_page_config(page_title="Recruitment · Porter", page_icon="🧲", layout="wide")
+st.set_page_config(page_title="Recruitment", layout="wide")
 page_style()
 q_all, c_all, rec = load_recruitment()
 
