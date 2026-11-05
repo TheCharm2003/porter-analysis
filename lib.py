@@ -180,7 +180,7 @@ section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] p{color:var(
 .delta{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-top:6px;}
 .delta.up{background:#e8f6ef;color:var(--success);} .delta.down{background:#fdecec;color:var(--danger);} .delta.flat{background:var(--n100);color:var(--n500);}
 
-/* key insight strip (one-line live summary) */
+/* key insight strip */
 .insight{display:flex;gap:10px;align-items:flex-start;background:var(--blue-pale);border:1px solid var(--blue-light);border-radius:var(--r-md);
  padding:13px 16px;margin:0 0 16px;font-size:13.5px;line-height:1.5;color:var(--ink);}
 .insight .tag{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.06em;
@@ -234,8 +234,8 @@ def page_style():
 
 def topbar(title, sub, pills=()):
     ph = "".join(f'<span class="pill {c}"><span class="d"></span>{t}</span>' for t, c in pills)
-    st.markdown(f'<div><h1>{title}</h1><div class="sub">{sub}</div></div></div>'
-                f'<div class="right">{ph}</div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div><h1>{title}</h1><div class="sub">{sub}</div></div>'
+                f'<div class="right">{ph}</div>', unsafe_allow_html=True)
 
 
 def hero(eyebrow, title, desc, metrics):

@@ -11,10 +11,10 @@ st.set_page_config(page_title="Recruitment · Porter", page_icon="🧲", layout=
 page_style()
 q_all, c_all, rec = load_recruitment()
 
-# ------------------------------------------------------------------ sidebar
+# Sidebar
 sb = st.sidebar
 sb.markdown('<div class="sb-label">Filters</div>', unsafe_allow_html=True)
-sb.caption("Empty = all. Requisition filters also apply to their candidates.")
+sb.caption("Empty = all.")
 months = sorted(q_all["Req Month"].dropna().unique())
 m0, m1 = sb.select_slider("Req raised month", options=months, value=(months[0], months[-1]))
 REQ_DIMS = {"Thread": None, "Function": None, "Grade": GRADE_ORDER, "Location": None, "Recruiter": None,
@@ -60,7 +60,7 @@ hero("Porter · Talent Acquisition · FY26 requisitions", "Hiring scorecard",
       (f"{int(c['Joined'].sum())}", "Joiners"),
       (f"₹{q['Agency Fee (INR)'].sum() / 1e5:.1f}L", "Agency fees")])
 
-# ---- live one-line summary (recalculates with filters)
+# Live one-line summary (recalculates with filters)
 def _rec_summary():
     if not len(f):
         return f"No filled requisitions in this selection; {len(open_q)} still open, {ob} past SLA."
