@@ -6,7 +6,7 @@ import streamlit as st
 
 from lib import (C_APR, C_MID, C_NEG, C_OCT, C_POS, COMPA_ORDER, GRADE_ORDER, MIN_N, Q_LABELS, TENURE_ORDER, WAVES,
                  WAVE_COLORS, apply_filters, enps, enps_table, hbar, hero, load_enps, multiselect_filter, page_style,
-                 plotly_layout, section, sort_segments, stat, summary, tone, topbar)
+                 label_positions, plotly_layout, section, sort_segments, stat, summary, tone, topbar)
 
 st.set_page_config(page_title="Employee Sentiment · Porter", page_icon="💬", layout="wide")
 page_style()
@@ -111,6 +111,7 @@ with tab1:
             fig.add_annotation(x=row["Survey Wave"], y=104, text=f"eNPS {row['eNPS']:.1f} · n={row['n']}",
                                showarrow=False, font=dict(size=12))
         fig.update_yaxes(range=[0, 110], title=None)
+        fig.update_xaxes(title=None)
         st.plotly_chart(plotly_layout(fig, 380), width="stretch")
     with c2:
         items = r.groupby("Survey Wave")[list(Q_LABELS)].mean().rename(columns=Q_LABELS).T.reset_index()
@@ -210,7 +211,8 @@ with tab3:
         d = pd.DataFrame({"Correlation with Q1": corr, "Change Apr→Oct": chg}).reset_index(names="Item")
         fig = px.scatter(d, x="Change Apr→Oct", y="Correlation with Q1", text="Item",
                          title="Key-driver map: importance vs movement")
-        fig.update_traces(marker=dict(size=14, color=C_OCT), textposition="top center", cliponaxis=False)
+        fig.update_traces(marker=dict(size=14, color=C_OCT), cliponaxis=False,
+                          textposition=label_positions(d["Change Apr→Oct"], d["Correlation with Q1"]))
         xr = d["Change Apr→Oct"]
         fig.update_xaxes(range=[min(xr.min(), 0) - 0.08, max(xr.max(), 0) + 0.08])
         yr = d["Correlation with Q1"]
@@ -222,6 +224,8 @@ with tab3:
         th = r.dropna(subset=["Comment Theme"]).groupby(["Survey Wave", "Comment Theme"]).size().rename("n").reset_index()
         fig = px.bar(th, x="n", y="Comment Theme", color="Survey Wave", barmode="group", orientation="h",
                      color_discrete_map=WAVE_COLORS, title="Comment themes (keyword-coded)")
+        fig.update_yaxes(title=None)
+        fig.update_xaxes(title="Comments")
         st.plotly_chart(plotly_layout(fig, 380), width="stretch")
     c1, c2 = st.columns(2)
     with c1:
@@ -262,6 +266,7 @@ with tab4:
         m = ex.groupby(["Exit Month", "Exit Classification"]).size().rename("Exits").reset_index()
         fig = px.bar(m, x="Exit Month", y="Exits", color="Exit Classification",
                      color_discrete_map={"Regrettable": C_NEG, "Non-Regrettable": C_APR}, title="Exits by month")
+        fig.update_xaxes(title=None)
         st.plotly_chart(plotly_layout(fig, 340), width="stretch")
     with c2:
         a = r[r["Survey Wave"] == "Apr-2026"].copy()
@@ -273,5 +278,6 @@ with tab4:
                      category_orders={"eNPS Group": ["Detractor", "Passive", "Promoter"]},
                      color="eNPS Group", color_discrete_map={"Detractor": C_NEG, "Passive": C_APR, "Promoter": C_POS},
                      hover_data=["n"], title="% of April respondents who later left voluntarily")
-        fig.update_yaxes(title="%")
+        fig.update_yaxes(title="% left")
+        fig.update_xaxes(title=None)
         st.plotly_chart(plotly_layout(fig, 340, legend=False), width="stretch")

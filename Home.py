@@ -62,7 +62,7 @@ section("How to use")
 with st.container(key="card_howto"):
     st.markdown(
         """
-- **Filters** live in the dark sidebar on each page. Leave a filter empty to include everything. Every number is
+- **Filters** live in the sidebar on each page. Leave a filter empty to include everything. Every number is
   recalculated from the filtered rows; nothing is pre-aggregated.
 - **Drill-down:** pick a *Level 1* dimension, select one segment, then pick a *Level 2* dimension.
 - **Small segments:** groups with fewer than 5 responses are hidden from sentiment charts by default.

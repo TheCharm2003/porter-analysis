@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from lib import (C_APR, C_MID, C_NEG, C_OCT, C_POS, C_TEAL, GRADE_ORDER, NAVY, apply_filters, hbar, hero,
-                 load_recruitment, multiselect_filter, page_style, plotly_layout, section, sort_segments, stat, summary, topbar)
+                 load_recruitment, multiselect_filter, page_style, label_positions, plotly_layout, section, sort_segments, stat, summary, topbar)
 
 st.set_page_config(page_title="Recruitment · Porter", page_icon="🧲", layout="wide")
 page_style()
@@ -107,12 +107,17 @@ with tab1:
                                        n=("Req ID", "size")).reset_index()
         fig = go.Figure()
         fig.add_bar(x=m["Req Month"], y=m["TTF"], name="Median TTF (days)", marker_color=C_OCT,
-                    text=[f"n={n}" for n in m["n"]], textposition="inside")
+                    text=[f"n={n}" for n in m["n"]], textposition="inside", insidetextanchor="start")
         fig.add_scatter(x=m["Req Month"], y=m["SLA"] * 100, name="% within SLA", yaxis="y2", mode="lines+markers",
                         line=dict(color=C_MID, width=3))
         fig.update_layout(title="Time to fill by month raised (filled reqs)",
-                          yaxis2=dict(overlaying="y", side="right", range=[0, 105], title="% within SLA", showgrid=False))
-        st.plotly_chart(plotly_layout(fig, 340), width="stretch")
+                          yaxis2=dict(overlaying="y", side="right", range=[0, 110], tickvals=[0, 25, 50, 75, 100],
+                                      ticksuffix="%", title=None, showgrid=False, automargin=True,
+                                      tickfont=dict(color="#6B7585")))
+        fig.update_layout(yaxis_title="Median days")
+        fig = plotly_layout(fig, 340)
+        fig.update_layout(yaxis2=dict(ticksuffix="%"))
+        st.plotly_chart(fig, width="stretch")
         st.caption("Recent months look faster because only quickly-filled reqs have closed yet (right-censoring).")
     with c2:
         s = q.groupby(["Req Month", "SLA Status (recalc)"]).size().rename("n").reset_index()
@@ -193,7 +198,8 @@ with tab3:
         s["Shortlist %"] = s["Shortlist_pct"] * 100
         fig = px.scatter(s, x="Applicants", y="Joins per 100 applicants", size="Joined", text="Source",
                          title="Source volume vs yield (bubble = joiners)", size_max=40)
-        fig.update_traces(marker_color=C_OCT, textposition="top center", cliponaxis=False)
+        fig.update_traces(marker_color=C_OCT, cliponaxis=False,
+                          textposition=label_positions(s["Applicants"], s["Joins per 100 applicants"]))
         st.plotly_chart(plotly_layout(fig, 420, legend=False), width="stretch")
     st.dataframe(s.drop(columns="Shortlist_pct").style.format({"Shortlist %": "{:.0f}", "Offer accept %": "{:.0f}",
                                                                 "Joins per 100 applicants": "{:.1f}"}, na_rep="–"),
@@ -218,6 +224,8 @@ with tab3:
     fig = px.bar(t, x="Offer vs expected", y="n", color="Outcome", barmode="stack", text_auto=True,
                  category_orders={"Offer vs expected": ["≥10% below", "5–10% below", "0–5% below", "At/above"]},
                  color_discrete_map={"Accepted": C_POS, "Declined": C_NEG, "Backed out": C_MID, "Pending": C_APR})
+    fig.update_traces(textposition="inside")
+    fig.update_xaxes(title=None)
     st.plotly_chart(plotly_layout(fig, 320), width="stretch")
 
 # ------------------------------------------------------------------ where time goes
@@ -288,7 +296,7 @@ with tab5:
     st.caption("Accepted / month averages over the months in view. Targets are per recruiter per month (Recruiters sheet).")
     if not a.empty:
         fig = px.line(a, x="Month", y="Accepted", color="Recruiter", markers=True, title="Accepted offers per month")
-        st.plotly_chart(plotly_layout(fig, 340), width="stretch")
+        st.plotly_chart(plotly_layout(fig, 340, legend_width=900), width="stretch")
 
     section("Round-1 interviewers", "feedback turnaround")
     iv = c.dropna(subset=["R1 Interview Date"]).groupby(["R1 Interviewer ID", "R1 Interviewer"]).agg(
@@ -300,8 +308,9 @@ with tab5:
     fig = px.bar(iv.head(15), x="Mean_lag", y="R1 Interviewer", orientation="h", hover_data=["Interviews", "Over_3d"],
                  title="Slowest R1 interviewers (mean days from interview to feedback)")
     fig.update_traces(marker_color=[C_NEG if v > 3 else C_APR for v in iv.head(15)["Mean_lag"]])
-    fig.update_yaxes(autorange="reversed")
-    st.plotly_chart(plotly_layout(fig, 420, legend=False), width="stretch")
+    fig.update_yaxes(autorange="reversed", title=None)
+    fig.update_xaxes(title="Mean days to feedback")
+    st.plotly_chart(plotly_layout(fig, 26 * len(iv.head(15)) + 110, legend=False), width="stretch")
     st.dataframe(iv.rename(columns={"Median_lag": "Median lag (d)", "Mean_lag": "Mean lag (d)", "Over_3d": "% > 3 days"})
                  .style.format({"Median lag (d)": "{:.0f}", "Mean lag (d)": "{:.1f}", "% > 3 days": "{:.0f}"}, na_rep="–"),
                  width="stretch", hide_index=True, height=280)

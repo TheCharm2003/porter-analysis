@@ -1,4 +1,5 @@
 """Shared loaders, metric functions and UI helpers for the Porter People Analytics app."""
+import re
 from pathlib import Path
 
 import numpy as np
@@ -125,7 +126,8 @@ CSS = """
 --shadow-xs:0 1px 2px rgba(3,12,37,.06);--shadow-sm:0 1px 3px rgba(3,12,37,.08),0 1px 2px rgba(3,12,37,.04);
 --shadow-md:0 4px 12px rgba(13,85,139,.10),0 2px 4px rgba(3,12,37,.05);--r-sm:6px;--r-md:10px;--r-lg:16px;
 --ease:cubic-bezier(0.16,1,0.3,1);--font:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;}
-html,body,[class*="css"],.stApp,.stApp p,.stApp label,.stApp li,.stApp span,.stApp div{font-family:var(--font);}
+html,body,[class*="css"],.stApp,.stApp p,.stApp label,.stApp li,.stApp span:not([data-testid="stIconMaterial"]),.stApp div{font-family:var(--font);}
+[data-testid="stIconMaterial"]{font-family:"Material Symbols Rounded"!important;}
 .stApp{background:var(--n50);color:var(--ink);}
 h1,h2,h3,h4,h5{font-family:var(--font)!important;color:var(--midnight)!important;letter-spacing:-.02em;}
 header[data-testid="stHeader"]{background:transparent;}
@@ -193,6 +195,9 @@ section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] p{color:var(
  border-radius:var(--r-md);box-shadow:var(--shadow-sm);padding:14px 16px;transition:box-shadow .2s var(--ease);}
 [data-testid="stPlotlyChart"]:hover,[class*="st-key-card"]:hover{box-shadow:var(--shadow-md);}
 [data-testid="stDataFrame"]{padding:6px;}
+[data-testid="stPlotlyChart"]{padding:0!important;border:none!important;overflow:hidden;
+ box-shadow:0 0 0 1px var(--n200),var(--shadow-sm);}
+[data-testid="stPlotlyChart"]:hover{box-shadow:0 0 0 1px var(--n200),var(--shadow-md);}
 [class*="st-key-card"] [data-testid="stPlotlyChart"],[class*="st-key-card"] [data-testid="stDataFrame"]{border:none;box-shadow:none;padding:0;}
 .card-title{font-size:13px;font-weight:700;color:var(--midnight);display:flex;justify-content:space-between;align-items:center;margin:2px 0 8px;}
 .card-title .hint{font-size:11.5px;font-weight:600;color:var(--n500);}
@@ -274,11 +279,95 @@ def tone(delta, good_up=True):
     return "up" if (delta > 0) == good_up else "down"
 
 
-def plotly_layout(fig, height=360, legend=True):
+_MONTH = re.compile(r"^\d{4}-\d{2}$")
+
+
+def _month_axis(fig):
+    """'2026-04' strings render as a date axis, which clips the first and last bars. Use 'Apr-26' categories."""
+    seen = set()
+    for tr in fig.data:
+        x = getattr(tr, "x", None)
+        if x is None or len(x) == 0 or getattr(tr, "orientation", None) == "h":
+            return
+        xs = [str(v) for v in x]
+        if not all(_MONTH.match(v) for v in xs):
+            return
+        seen.update(xs)
+    if not seen:
+        return
+    lab = lambda v: pd.Timestamp(v + "-01").strftime("%b-%y")
+    for tr in fig.data:
+        tr.x = [lab(str(v)) for v in tr.x]
+    fig.update_xaxes(type="category", categoryorder="array", categoryarray=[lab(v) for v in sorted(seen)],
+                     tickangle=0, title_text=None)
+
+
+def _wrap(s, width=16):
+    words, lines, cur = str(s).split(), [], ""
+    for w in words:
+        if cur and len(cur) + 1 + len(w) > width:
+            lines.append(cur); cur = w
+        else:
+            cur = f"{cur} {w}".strip()
+    lines.append(cur)
+    return "<br>".join(lines)
+
+
+def _wrap_categories(fig):
+    """Long categorical x labels get wrapped onto two lines instead of being rotated and clipped."""
+    cats = []
+    for tr in fig.data:
+        x = getattr(tr, "x", None)
+        if x is None or getattr(tr, "orientation", None) == "h" or getattr(tr, "type", "") not in ("bar", "box"):
+            return
+        for v in x:
+            if not isinstance(v, str):
+                return
+            if v not in cats:
+                cats.append(v)
+    if cats and max(len(c) for c in cats) > 11:
+        fig.update_xaxes(tickmode="array", tickvals=cats, ticktext=[_wrap(c) for c in cats], tickangle=0)
+
+
+def _legend_rows(fig, width=440):
+    names = [tr.name for tr in fig.data if tr.name and tr.showlegend is not False]
+    names = list(dict.fromkeys(names))
+    if not names:
+        return 0
+    rows, used = 1, 0
+    for n in names:
+        w = 7 * len(str(n)) + 44
+        if used and used + w > width:
+            rows += 1; used = 0
+        used += w
+    return rows
+
+
+def label_positions(x, y):
+    """Put a point's label below when another label already sits close above it, so text never overlaps."""
+    x, y = list(map(float, x)), list(map(float, y))
+    xr = (max(x) - min(x)) or 1
+    yr = (max(y) - min(y)) or 1
+    order = sorted(range(len(x)), key=lambda i: -y[i])
+    pos = [None] * len(x)
+    for i in order:
+        clash = any(pos[j] == "top center" and abs(x[i] - x[j]) < 0.6 * xr and abs(y[i] - y[j]) < 0.22 * yr
+                    for j in range(len(x)) if pos[j])
+        pos[i] = "bottom center" if clash else "top center"
+    return pos
+
+
+def plotly_layout(fig, height=360, legend=True, legend_width=440):
+    _month_axis(fig)
+    _wrap_categories(fig)
+    rows = _legend_rows(fig, legend_width) if legend else 0
+    has_title = bool(fig.layout.title.text)
+    top = (40 if has_title else 12) + (24 * rows + 6 if rows else 6)
     fig.update_layout(
-        height=height, margin=dict(l=8, r=24, t=56, b=28), barcornerradius=4,
+        height=height + max(rows - 1, 0) * 24, margin=dict(l=16, r=24, t=top, b=14, autoexpand=True),
+        barcornerradius=4, uniformtext=dict(minsize=10, mode="hide"),
         font=dict(family="DM Sans, system-ui, sans-serif", size=12, color="#333333"),
-        title=dict(y=0.98, yanchor="top", x=0.0, xanchor="left",
+        title=dict(yref="container", y=1, yanchor="top", pad=dict(t=14, l=18), xref="container", x=0.0, xanchor="left",
                    font=dict(family="DM Sans, system-ui, sans-serif", size=13, color=NAVY, weight=700)),
         legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="left", x=0, title_text="",
                     font=dict(size=11.5, color=INK_SOFT)) if legend else None,
@@ -286,8 +375,11 @@ def plotly_layout(fig, height=360, legend=True):
         colorway=["#01b8fb", "#0d558b", "#8ec9f5", "#066db8", "#0a4672", "#f8bc3b"],
         hoverlabel=dict(bgcolor=NAVY, font=dict(color="#fff", family="DM Sans")),
     )
-    fig.update_xaxes(showgrid=False, linecolor="#dfe4ec", tickfont=dict(color=INK_SOFT))
-    fig.update_yaxes(gridcolor="#eef1f6", zerolinecolor="#c4ccd8", tickfont=dict(color=INK_SOFT))
+    fig.update_traces(textangle=0, selector=dict(type="bar"))
+    fig.update_xaxes(showgrid=False, linecolor="#dfe4ec", tickfont=dict(color=INK_SOFT), automargin=True,
+                     title_standoff=10, title_font=dict(size=12, color=INK_SOFT))
+    fig.update_yaxes(gridcolor="#eef1f6", zerolinecolor="#c4ccd8", tickfont=dict(color=INK_SOFT), automargin=True,
+                     title_standoff=8, title_font=dict(size=12, color=INK_SOFT))
     return fig
 
 
@@ -305,4 +397,4 @@ def hbar(labels, values, ns, title, xtitle, colors, height=None):
     fig.update_traces(marker_line_width=0, textfont=dict(color=NAVY, size=12))
     fig.update_xaxes(range=[lo - (pad if lo < 0 else 0), hi + pad])
     fig.update_yaxes(autorange="reversed")
-    return plotly_layout(fig, height or max(240, 34 * len(vals) + 110), legend=False)
+    return plotly_layout(fig, height or max(190, 36 * len(vals) + 96), legend=False)
