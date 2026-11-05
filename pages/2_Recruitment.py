@@ -4,17 +4,17 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-from lib import (C_APR, C_MID, C_NEG, C_OCT, C_POS, GRADE_ORDER, apply_filters, hbar, load_recruitment, multiselect_filter,
-                 page_style, plotly_layout, sort_segments)
+from lib import (C_APR, C_MID, C_NEG, C_OCT, C_POS, C_TEAL, GRADE_ORDER, NAVY, apply_filters, hbar, hero,
+                 load_recruitment, multiselect_filter, page_style, plotly_layout, section, sort_segments, stat, topbar)
 
 st.set_page_config(page_title="Recruitment · Porter", page_icon="🧲", layout="wide")
 page_style()
 q_all, c_all, rec = load_recruitment()
 
-# Sidebar
+# ------------------------------------------------------------------ sidebar
 sb = st.sidebar
-sb.header("Filters")
-sb.caption("Empty = all.")
+sb.markdown('<div class="sb-label">Filters</div>', unsafe_allow_html=True)
+sb.caption("Empty = all. Requisition filters also apply to their candidates.")
 months = sorted(q_all["Req Month"].dropna().unique())
 m0, m1 = sb.select_slider("Req raised month", options=months, value=(months[0], months[-1]))
 REQ_DIMS = {"Thread": None, "Function": None, "Grade": GRADE_ORDER, "Location": None, "Recruiter": None,
@@ -32,38 +32,38 @@ if src_sel:
     q = q[q["Hire Source"].isin(src_sel)]
 f = q[q["Filled"]]
 
-st.title("Recruitment performance · FY26 requisitions")
 active = {k: v for k, v in sel.items() if v}
 if src_sel:
     active["Source"] = src_sel
-txt = f"Req raised {m0} → {m1}"
-if active:
-    txt += "; " + "; ".join(f"**{k}** = {', '.join(map(str, v))}" for k, v in active.items())
-st.caption(txt)
+txt = f"Reqs raised {m0} → {m1}"
+txt += " · " + ("; ".join(f"{k}: {', '.join(map(str, v))}" for k, v in active.items()) if active else "all requisitions")
+topbar("Recruitment performance", txt,
+       [("Data as of 31-Oct-2026", "green"), (f"{len(active)} filter(s) active", "blue" if active else "")])
 if q.empty:
     st.warning("No requisitions match these filters.")
     st.stop()
 
-# KPIs
 open_q = q[q["Req Status"] == "Open"]
-k = st.columns(4)
-k2 = st.columns(4)
-k[0].metric("Requisitions", len(q))
-k[1].metric("Filled (accepted)", len(f), help="Closed - Joined + Offer Accepted")
-k[2].metric("Median TTF", f"{f['TTF (days)'].median():.0f} d" if len(f) else "–",
-            help="Req raised → hired candidate accepts offer")
-k[3].metric("Filled within SLA", f"{f['Within SLA (recalc)'].mean() * 100:.0f}%" if len(f) else "–")
-k2[0].metric("Open & past SLA", f"{(q['SLA Status (recalc)'] == 'Open - Breached').sum()} of {len(open_q)}")
 offers = c[c["Reached Offer"]]
 acc_rate = (offers["Offer Status"] == "Accepted").mean() * 100 if len(offers) else np.nan
-k2[1].metric("Offer acceptance", "–" if np.isnan(acc_rate) else f"{acc_rate:.0f}%", help=f"{len(offers)} offers released")
-k2[2].metric("Agency fees", f"₹{q['Agency Fee (INR)'].sum() / 1e5:.1f}L", help="8.33% of offered CTC for agency joiners")
-k2[3].metric("Joiners", int(c["Joined"].sum()))
+sla = f["Within SLA (recalc)"].astype(float).mean() * 100 if len(f) else np.nan
+ob = int((q["SLA Status (recalc)"] == "Open - Breached").sum())
+hero("Porter · Talent Acquisition · FY26 requisitions", "Hiring scorecard",
+     "Time to fill = days from Req Raised On to the hired candidate’s offer acceptance. SLA = 30 / 45 / 60 days for "
+     "TBA–G2 / G3–G5 / G6+, recomputed from the README rule.",
+     [(f"{len(f)} / {len(q)}", "Requisitions filled"),
+      (f"{f['TTF (days)'].median():.0f} d" if len(f) else "–", "Median time to fill"),
+      ("–" if pd.isna(sla) else f"{sla:.0f}%", "Filled within SLA",
+       None if pd.isna(sla) else ("on track" if sla >= 85 else "below 85%"), "up" if not pd.isna(sla) and sla >= 85 else "down"),
+      (f"{ob}", f"Open reqs past SLA (of {len(open_q)})"),
+      ("–" if pd.isna(acc_rate) else f"{acc_rate:.0f}%", f"Offer acceptance ({len(offers)})"),
+      (f"{int(c['Joined'].sum())}", "Joiners"),
+      (f"₹{q['Agency Fee (INR)'].sum() / 1e5:.1f}L", "Agency fees")])
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["Monthly trends", "Drill-down", "Funnel & sources", "Where time goes",
                                          "Recruiters & interviewers"])
 
-# trends
+# ------------------------------------------------------------------ trends
 with tab1:
     raised = q.groupby("Req Month").size().rename("Reqs raised")
     acc = c[c["Offer Accepted"]].assign(m=lambda d: d["Offer Response On"].dt.to_period("M").astype(str)) \
@@ -73,7 +73,7 @@ with tab1:
     t = pd.concat([raised, acc, joins], axis=1).fillna(0).sort_index()
     t = t[t.index <= "2026-10"]
     fig = go.Figure()
-    for col, colr in zip(t.columns, [C_APR, C_OCT, C_POS]):
+    for col, colr in zip(t.columns, [C_APR, C_OCT, C_TEAL]):
         fig.add_bar(x=t.index, y=t[col], name=col, marker_color=colr)
     fig.update_layout(barmode="group", title="Hiring volume by month")
     st.plotly_chart(plotly_layout(fig, 340), width="stretch")
@@ -95,10 +95,10 @@ with tab1:
         s = q.groupby(["Req Month", "SLA Status (recalc)"]).size().rename("n").reset_index()
         fig = px.bar(s, x="Req Month", y="n", color="SLA Status (recalc)", title="SLA status by month raised",
                      color_discrete_map={"Within SLA": C_POS, "Breached": C_NEG, "Open - Breached": "#F08C8C",
-                                         "Open - Within SLA": "#9AC5F4", "On Hold / Archived": "#C9D1D9"})
+                                         "Open - Within SLA": "#9CC7EA", "On Hold / Archived": C_APR})
         st.plotly_chart(plotly_layout(fig, 340), width="stretch")
 
-# Drill-down
+# ------------------------------------------------------------------ drill-down
 with tab2:
     dims = ["Thread", "Function", "Grade", "Location", "Recruiter", "Criticality", "Position Type", "Job Family",
             "Hire Source", "Hiring Manager"]
@@ -147,7 +147,7 @@ with tab2:
         st.dataframe(sub[cols].sort_values("Age (days)", ascending=False), width="stretch", hide_index=True)
         st.download_button("Download CSV", sub[cols].to_csv(index=False), f"reqs_{d1}_{seg}.csv")
 
-# funnel & sources
+# ------------------------------------------------------------------ funnel & sources
 with tab3:
     c1, c2 = st.columns([1, 1.2])
     with c1:
@@ -156,7 +156,7 @@ with tab3:
                   ("R2 interview", c["Reached R2"].sum()), ("Offer", c["Reached Offer"].sum()),
                   ("Accepted", c["Offer Accepted"].sum()), ("Joined", c["Joined"].sum())]
         fig = go.Figure(go.Funnel(y=[s for s, _ in stages], x=[n for _, n in stages], textinfo="value+percent previous",
-                                  marker_color=C_OCT))
+                                  marker_color=[NAVY, "#1b2f5a", "#27508e", "#1f60a0", C_OCT, "#3d8fd0", C_TEAL, "#1e8e5a"]))
         fig.update_layout(title="Candidate funnel (stage reached)")
         st.plotly_chart(plotly_layout(fig, 420, legend=False), width="stretch")
     with c2:
@@ -182,10 +182,10 @@ with tab3:
                                                                    Joined=("Joined", "sum")).reset_index()
         fee = q[(q["Hire Source"] == "Agency")].groupby("Hire Agency")["Agency Fee (INR)"].sum()
         ag["Fees (₹L)"] = ag["Agency Name"].map(fee).fillna(0) / 1e5
-        st.markdown("##### Agencies")
+        section("Agencies")
         st.dataframe(ag.style.format({"Fees (₹L)": "{:.1f}"}), width="stretch", hide_index=True)
 
-    st.markdown("##### Offer outcomes vs pay gap to candidate expectation")
+    section("Offer outcomes vs pay gap to candidate expectation")
     o = c[c["Reached Offer"]].copy()
     o["Outcome"] = np.select([o["Candidate Status"] == "Not Joined - Backed Out", o["Offer Status"] == "Declined",
                               o["Offer Status"] == "Accepted"], ["Backed out", "Declined", "Accepted"], "Pending")
@@ -194,10 +194,10 @@ with tab3:
     t = o.groupby(["Offer vs expected", "Outcome"]).size().rename("n").reset_index()
     fig = px.bar(t, x="Offer vs expected", y="n", color="Outcome", barmode="stack", text_auto=True,
                  category_orders={"Offer vs expected": ["≥10% below", "5–10% below", "0–5% below", "At/above"]},
-                 color_discrete_map={"Accepted": C_POS, "Declined": C_NEG, "Backed out": C_MID, "Pending": "#C9D1D9"})
+                 color_discrete_map={"Accepted": C_POS, "Declined": C_NEG, "Backed out": C_MID, "Pending": C_APR})
     st.plotly_chart(plotly_layout(fig, 320), width="stretch")
 
-# time goes
+# ------------------------------------------------------------------ where time goes
 with tab4:
     hired = c[c["Candidate ID"].isin(f["Hired Candidate"])]
     steps = [("Req raised → hire applied", "Req Raised On", "Applied On"),
@@ -241,7 +241,7 @@ with tab4:
         fig.update_layout(title=title, yaxis_title="Median TTF (days)")
         box.plotly_chart(plotly_layout(fig, 320, legend=False), width="stretch")
 
-# recruiters & interviewers
+# ------------------------------------------------------------------ recruiters & interviewers
 with tab5:
     acc = c[c["Offer Accepted"]].assign(Month=lambda d: d["Offer Response On"].dt.to_period("M").astype(str))
     a = acc.groupby(["Recruiter", "Month"]).size().rename("Accepted").reset_index()
@@ -256,7 +256,7 @@ with tab5:
                   how="left")
     sc["% of target"] = sc["Accepted / month"] / sc["Monthly Offer Target"] * 100
     sc["SLA"] *= 100
-    st.markdown("##### Recruiter scorecard")
+    section("Recruiter scorecard")
     st.dataframe(sc.rename(columns={"TTF": "Median TTF", "SLA": "% in SLA"}).style
                  .format({"Median TTF": "{:.0f}", "% in SLA": "{:.0f}", "Accepted / month": "{:.1f}", "% of target": "{:.0f}"},
                          na_rep="–")
@@ -267,7 +267,7 @@ with tab5:
         fig = px.line(a, x="Month", y="Accepted", color="Recruiter", markers=True, title="Accepted offers per month")
         st.plotly_chart(plotly_layout(fig, 340), width="stretch")
 
-    st.markdown("##### Round-1 interviewers: feedback turnaround")
+    section("Round-1 interviewers", "feedback turnaround")
     iv = c.dropna(subset=["R1 Interview Date"]).groupby(["R1 Interviewer ID", "R1 Interviewer"]).agg(
         Interviews=("Candidate ID", "size"), Median_lag=("R1 Feedback Lag (days)", "median"),
         Mean_lag=("R1 Feedback Lag (days)", "mean"),

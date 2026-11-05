@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="48" viewBox="0 0 240 48">
+  <rect x="2" y="3" width="42" height="42" rx="10" fill="#ffffff"/>
+  <text x="23" y="33" text-anchor="middle" font-family="Manrope, Segoe UI, Arial, sans-serif" font-size="24" font-weight="800" fill="#1370bb">P</text>
+  <text x="56" y="22" font-family="Manrope, Segoe UI, Arial, sans-serif" font-size="17" font-weight="800" fill="#ffffff">Porter</text>
+  <text x="56" y="40" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#8f9ac2">People Analytics · FY26</text>
+</svg>

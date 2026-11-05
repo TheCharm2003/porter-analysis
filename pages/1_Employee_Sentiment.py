@@ -5,17 +5,17 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from lib import (C_APR, C_MID, C_NEG, C_OCT, C_POS, COMPA_ORDER, GRADE_ORDER, MIN_N, Q_LABELS, TENURE_ORDER, WAVES,
-                 WAVE_COLORS, apply_filters, enps, enps_table, hbar, load_enps, multiselect_filter, page_style,
-                 plotly_layout, sort_segments)
+                 WAVE_COLORS, apply_filters, enps, enps_table, hbar, hero, load_enps, multiselect_filter, page_style,
+                 plotly_layout, section, sort_segments, stat, tone, topbar)
 
 st.set_page_config(page_title="Employee Sentiment · Porter", page_icon="💬", layout="wide")
 page_style()
 r_all, e_all = load_enps()
 
-# Sidebar
+# ------------------------------------------------------------------ sidebar filters
 sb = st.sidebar
-sb.header("Filters")
-sb.caption("Empty = all.")
+sb.markdown('<div class="sb-label">Filters</div>', unsafe_allow_html=True)
+sb.caption("Empty = all. Every metric recalculates on the filtered respondents.")
 HR_DIMS = {
     "Company": None, "Thread": None, "Function": None, "Job Family": None, "Grade": GRADE_ORDER,
     "Location": None, "Location Type": None, "Performance Rating FY25-26": None, "Compa Band": COMPA_ORDER,
@@ -34,32 +34,36 @@ show_small = sb.toggle(f"Show segments with n < {MIN_N}", value=False)
 r = apply_filters(r_all, sel)
 e = apply_filters(e_all, {k: v for k, v in sel.items() if k in HR_DIMS})
 
-st.title("Employee sentiment · eNPS pulse")
 active = {k: v for k, v in sel.items() if v}
-st.caption("Filters: " + ("; ".join(f"**{k}** = {', '.join(map(str, v))}" for k, v in active.items()) if active else "none (all employees)"))
+ftxt = "; ".join(f"{k}: {', '.join(map(str, v))}" for k, v in active.items()) if active else "All employees"
+topbar("Employee sentiment", "eNPS pulse · April vs October 2026 · " + ftxt,
+       [("Data as of 31-Oct-2026", "green"), (f"{len(active)} filter(s) active", "blue" if active else "")])
 
 if r.empty:
     st.warning("No responses match these filters.")
     st.stop()
 
-# KPIs
 ra, ro = r[r["Survey Wave"] == "Apr-2026"], r[r["Survey Wave"] == "Oct-2026"]
 ea, eo = enps(ra["Q1"]), enps(ro["Q1"])
 inv_a, inv_o = e["Eligible Apr-2026"].sum(), e["Eligible Oct-2026"].sum()
 rr_a = ra["Employee ID"].nunique() / inv_a * 100 if inv_a else np.nan
 rr_o = ro["Employee ID"].nunique() / inv_o * 100 if inv_o else np.nan
-
-k = st.columns(6)
-k[0].metric("eNPS · Apr-26", "–" if np.isnan(ea) else f"{ea:.1f}", help=f"n = {ra['Q1'].notna().sum()}")
-k[1].metric("eNPS · Oct-26", "–" if np.isnan(eo) else f"{eo:.1f}",
-            None if np.isnan(ea) or np.isnan(eo) else f"{eo - ea:+.1f} pts", help=f"n = {ro['Q1'].notna().sum()}")
 na_, no_ = int(ra["Q1"].notna().sum()), int(ro["Q1"].notna().sum())
-k[2].metric("Responses Oct", f"{no_}", f"{no_ - na_:+d} vs Apr ({na_})", delta_color="off")
-k[3].metric("Response rate Oct", "–" if np.isnan(rr_o) else f"{rr_o:.0f}%",
-            None if np.isnan(rr_a) or np.isnan(rr_o) else f"{rr_o - rr_a:+.0f} pts vs Apr",
-            help="Respondents ÷ employees active on the wave open date (HR filters only)")
-k[4].metric("Detractors Oct", f"{(ro['Q1'].dropna() <= 6).mean() * 100:.0f}%" if ro["Q1"].notna().any() else "–")
-k[5].metric("Promoters Oct", f"{(ro['Q1'].dropna() >= 9).mean() * 100:.0f}%" if ro["Q1"].notna().any() else "–")
+f1 = lambda x, suf="": "–" if pd.isna(x) else f"{x:.1f}{suf}"
+d_enps = eo - ea if not (pd.isna(ea) or pd.isna(eo)) else np.nan
+d_rr = rr_o - rr_a if not (pd.isna(rr_a) or pd.isna(rr_o)) else np.nan
+det = (ro["Q1"].dropna() <= 6).mean() * 100 if ro["Q1"].notna().any() else np.nan
+pro = (ro["Q1"].dropna() >= 9).mean() * 100 if ro["Q1"].notna().any() else np.nan
+hero("Porter · Pulse survey · Wave 2 vs Wave 1", "Employee Net Promoter Score",
+     "eNPS = % promoters (9–10) minus % detractors (0–6) on “How likely are you to recommend Porter as a place to work?”. "
+     "All figures recalculate on the filters in the sidebar.",
+     [(f1(eo), "eNPS · Oct-26", None if pd.isna(d_enps) else f"{d_enps:+.1f} vs Apr", tone(d_enps)),
+      (f1(ea), "eNPS · Apr-26"),
+      (f"{no_}", f"Responses Oct (Apr {na_})"),
+      ("–" if pd.isna(rr_o) else f"{rr_o:.0f}%", "Response rate Oct",
+       None if pd.isna(d_rr) else f"{d_rr:+.0f} pts", tone(d_rr)),
+      ("–" if pd.isna(pro) else f"{pro:.0f}%", "Promoters Oct"),
+      ("–" if pd.isna(det) else f"{det:.0f}%", "Detractors Oct")])
 if any(sel[c] for c in RESP_ONLY):
     st.caption("Response rate ignores respondent-level filters (tenure, manager change), which are not defined for non-respondents.")
 
@@ -73,7 +77,7 @@ with tab1:
         mix = r.groupby("Survey Wave")["eNPS Group"].value_counts(normalize=True).mul(100).rename("pct").reset_index()
         fig = px.bar(mix, x="Survey Wave", y="pct", color="eNPS Group", text_auto=".0f",
                      category_orders={"eNPS Group": ["Detractor", "Passive", "Promoter"], "Survey Wave": WAVES},
-                     color_discrete_map={"Detractor": C_NEG, "Passive": "#C9D1D9", "Promoter": C_POS},
+                     color_discrete_map={"Detractor": C_NEG, "Passive": C_APR, "Promoter": C_POS},
                      title="Promoter / passive / detractor mix (%)")
         for _, row in t.iterrows():
             fig.add_annotation(x=row["Survey Wave"], y=104, text=f"eNPS {row['eNPS']:.1f} · n={row['n']}",
@@ -89,7 +93,7 @@ with tab1:
         fig.update_yaxes(range=[1, 5])
         st.plotly_chart(plotly_layout(fig, 380), width="stretch")
 
-    st.markdown("##### Change by segment")
+    section("Change by segment", "pick any dimension")
     dim = st.selectbox("Compare waves by", ["Thread", "Function", "Grade", "Location", "Location Type", "Tenure Band",
                                             "Compa Band", "Company", "Job Family", "Performance Rating FY25-26",
                                             "Mgr Changed <6m", "Intercity Jun-26 reorg"], key="wave_dim")
@@ -116,7 +120,7 @@ with tab1:
                  .background_gradient(subset=["Δ eNPS"], cmap="RdYlGn", vmin=-30, vmax=30),
                  width="stretch", hide_index=True)
 
-# Drill-down
+# ------------------------------------------------------------------ drill-down
 with tab2:
     st.markdown("Start from the overall score, pick a dimension, then select one segment to break it down again.")
     dims = ["Thread", "Function", "Location", "Grade", "Tenure Band", "Compa Band", "Location Type",
@@ -168,7 +172,7 @@ with tab2:
                      .background_gradient(subset=["eNPS"], cmap="RdYlGn", vmin=-50, vmax=50),
                      width="stretch")
 
-# Drivers
+# ------------------------------------------------------------------ drivers
 with tab3:
     c1, c2 = st.columns(2)
     with c1:
@@ -213,21 +217,23 @@ with tab3:
             cm = cm[cm["Comment Theme"].isin(th_sel)]
         st.dataframe(cm, width="stretch", hide_index=True, height=300)
 
-# Attrition
+# ------------------------------------------------------------------ attrition
 with tab4:
     st.markdown("Exits use the HR filters above (Thread, Function, Grade, …). FY26 = exits on/after 01-Apr-2026.")
     ex = e[e["Date of Exit"] >= "2026-04-01"]
     k = st.columns(4)
-    k[0].metric("FY26 exits", len(ex))
-    k[1].metric("Voluntary", int((ex["Exit Type"] == "Voluntary").sum()))
-    k[2].metric("Regrettable", int((ex["Exit Classification"] == "Regrettable").sum()))
+    nreg = int((ex["Exit Classification"] == "Regrettable").sum())
     hc = e[(e["Date of Joining"] <= "2026-04-01")].shape[0]
-    k[3].metric("Exits ÷ Apr headcount", f"{len(ex) / hc * 100:.1f}%" if hc else "–")
+    stat(k[0], "FY26 exits", len(ex))
+    stat(k[1], "Voluntary", int((ex["Exit Type"] == "Voluntary").sum()))
+    stat(k[2], "Regrettable", nreg, f"{nreg / len(ex) * 100:.0f}% of exits" if len(ex) else None, "red")
+    stat(k[3], "Exits ÷ Apr headcount", f"{len(ex) / hc * 100:.1f}%" if hc else "–")
+    st.write("")
     c1, c2 = st.columns(2)
     with c1:
         m = ex.groupby(["Exit Month", "Exit Classification"]).size().rename("Exits").reset_index()
         fig = px.bar(m, x="Exit Month", y="Exits", color="Exit Classification",
-                     color_discrete_map={"Regrettable": C_NEG, "Non-Regrettable": "#C9D1D9"}, title="Exits by month")
+                     color_discrete_map={"Regrettable": C_NEG, "Non-Regrettable": C_APR}, title="Exits by month")
         st.plotly_chart(plotly_layout(fig, 340), width="stretch")
     with c2:
         a = r[r["Survey Wave"] == "Apr-2026"].copy()
@@ -237,7 +243,7 @@ with tab4:
         t["rate"] *= 100
         fig = px.bar(t, x="eNPS Group", y="rate", text_auto=".1f",
                      category_orders={"eNPS Group": ["Detractor", "Passive", "Promoter"]},
-                     color="eNPS Group", color_discrete_map={"Detractor": C_NEG, "Passive": "#9AA5B1", "Promoter": C_POS},
+                     color="eNPS Group", color_discrete_map={"Detractor": C_NEG, "Passive": C_APR, "Promoter": C_POS},
                      hover_data=["n"], title="% of April respondents who later left voluntarily")
         fig.update_yaxes(title="%")
         st.plotly_chart(plotly_layout(fig, 340, legend=False), width="stretch")
