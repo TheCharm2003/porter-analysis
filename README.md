@@ -1,36 +1,10 @@
-# Porter People Analytics – case submission
-
-Streamlit app with two dashboards (Employee sentiment / eNPS and Recruitment) plus a data-quality register,
-built on cleaned versions of the two synthetic exports.
-
-```
-porter/
-├── Home.py                         # landing page (headline KPIs, how to use)
-├── pages/
-│   ├── 1_Employee_Sentiment.py     # eNPS dashboard
-│   ├── 2_Recruitment.py            # TA dashboard
-│   └── 3_Data_Quality.py           # every cleaning check, rows affected, treatment
-├── lib.py                          # loaders, metric functions (eNPS, TTF), chart helpers
-├── clean.py                        # THE WORKING: raw Excel -> clean CSVs + dq_log.csv
-├── data/                           # raw exports (enps.xlsx, recruit.xlsx)
-├── clean/                          # cleaned tables the app reads
-└── requirements.txt
-```
-
-## Run locally
+## Cleaning and Running
 
 ```bash
 pip install -r requirements.txt
-python clean.py            # optional - clean/ is already committed; re-run to regenerate from data/
+python clean.py
 streamlit run Home.py
 ```
-
-## Share a public link (Streamlit Community Cloud, free, ~3 minutes)
-
-1. Push this folder to a public GitHub repo.
-2. Go to https://share.streamlit.io → **Create app** → pick the repo, branch `main`, main file `Home.py` → **Deploy**.
-3. The app URL (`https://<name>.streamlit.app`) is viewable by anyone with the link.
-
 ## What the dashboards do
 
 | | Employee sentiment | Recruitment |

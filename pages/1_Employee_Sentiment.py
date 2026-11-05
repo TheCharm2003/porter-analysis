@@ -12,10 +12,10 @@ st.set_page_config(page_title="Employee Sentiment · Porter", page_icon="💬", 
 page_style()
 r_all, e_all = load_enps()
 
-# ------------------------------------------------------------------ sidebar filters
+# Sidebar filters
 sb = st.sidebar
 sb.markdown('<div class="sb-label">Filters</div>', unsafe_allow_html=True)
-sb.caption("Empty = all. Every metric recalculates on the filtered respondents.")
+sb.caption("Empty = all.")
 HR_DIMS = {
     "Company": None, "Thread": None, "Function": None, "Job Family": None, "Grade": GRADE_ORDER,
     "Location": None, "Location Type": None, "Performance Rating FY25-26": None, "Compa Band": COMPA_ORDER,
@@ -67,7 +67,7 @@ hero("Porter · Pulse survey · Wave 2 vs Wave 1", "Employee Net Promoter Score"
 if any(sel[c] for c in RESP_ONLY):
     st.caption("Response rate ignores respondent-level filters (tenure, manager change), which are not defined for non-respondents.")
 
-# ---- live one-line summary (recalculates with filters)
+# Summary (recalculates with filters)
 def _enps_summary():
     if pd.isna(eo):
         return "Not enough October responses in this selection to summarise."
@@ -97,7 +97,7 @@ summary(_enps_summary())
 
 tab1, tab2, tab3, tab4 = st.tabs(["Wave comparison", "Drill-down", "Drivers", "Attrition link"])
 
-# ------------------------------------------------------------------ wave comparison
+# Wave comparison
 with tab1:
     c1, c2 = st.columns([1, 1.4])
     with c1:
@@ -201,7 +201,7 @@ with tab2:
                      .background_gradient(subset=["eNPS"], cmap="RdYlGn", vmin=-50, vmax=50),
                      width="stretch")
 
-# ------------------------------------------------------------------ drivers
+# Drivers
 with tab3:
     c1, c2 = st.columns(2)
     with c1:
@@ -249,7 +249,7 @@ with tab3:
             cm = cm[cm["Comment Theme"].isin(th_sel)]
         st.dataframe(cm, width="stretch", hide_index=True, height=300)
 
-# ------------------------------------------------------------------ attrition
+# Attrition
 with tab4:
     st.markdown("Exits use the HR filters above (Thread, Function, Grade, …). FY26 = exits on/after 01-Apr-2026.")
     ex = e[e["Date of Exit"] >= "2026-04-01"]

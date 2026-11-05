@@ -18,7 +18,8 @@ Q_LABELS = {
     "Q5": "Onboarding & tools",
     "Q6": "Growth path",
 }
-# palette (navy / corporate-blue system with RAG status colours)
+
+# Palette
 NAVY = "#030C25"      # midnight
 INK_SOFT = "#6B7585"  # neutral-500
 C_APR = "#8EC9F5"     # blue-light
@@ -31,7 +32,7 @@ WAVE_COLORS = {"Apr-2026": C_APR, "Oct-2026": C_OCT}
 MIN_N = 5  # segments below this are suppressed (confidentiality + noise)
 
 
-# ------------------------------------------------------------------ loading
+# Loading
 @st.cache_data
 def load_enps():
     r = pd.read_csv(DATA / "enps_responses.csv", parse_dates=["Submitted On", "Date of Joining", "Manager Effective From",
@@ -63,7 +64,7 @@ def load_dq():
     return pd.read_csv(DATA / "dq_log.csv")
 
 
-# ------------------------------------------------------------------ metrics
+# Metrics
 def enps(scores):
     s = pd.Series(scores).dropna()
     if len(s) == 0:
@@ -90,7 +91,7 @@ def fmt_delta(x, suffix=""):
     return f"{x:+.1f}{suffix}"
 
 
-# ------------------------------------------------------------------ UI helpers
+# UI helpers
 def multiselect_filter(container, label, series, key, order=None):
     opts = [v for v in (order or sorted(series.dropna().unique().tolist())) if v in set(series.dropna())]
     sel = container.multiselect(label, opts, default=[], key=key, placeholder="All")
@@ -135,7 +136,7 @@ header[data-testid="stHeader"]{background:transparent;}
 @keyframes rdfade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .rd-fade{animation:rdfade .35s var(--ease) both;}
 
-/* ---------- sidebar: light filter rail ---------- */
+/* sidebar: light filter rail */
 section[data-testid="stSidebar"]{background:#fff;border-right:1px solid var(--n200);}
 [data-testid="stSidebarHeader"] img{height:40px!important;max-width:220px;}
 [data-testid="stSidebarNav"] a{border-radius:var(--r-md);margin:1px 8px;padding:6px 10px;}
@@ -153,10 +154,9 @@ section[data-testid="stSidebar"] .react-aria-ComboBox [role="group"],[data-testi
 section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] p{color:var(--n500)!important;}
 [data-testid="stExpander"]{border-radius:var(--r-md);border:1px solid var(--n200);background:#fff;}
 
-/* ---------- header bar ---------- */
+/* header bar */
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;background:#fff;border:1px solid var(--n200);
  border-radius:var(--r-md);padding:12px 20px;margin-bottom:16px;box-shadow:var(--shadow-xs);}
-.topbar .vr{width:1px;height:30px;background:var(--n200);}
 .topbar h1{font-size:16px!important;font-weight:700!important;margin:0!important;padding:0!important;line-height:1.1!important;}
 .topbar .sub{font-size:12px;color:var(--n500);margin-top:2px;}
 .topbar .right{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
@@ -165,7 +165,7 @@ section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] p{color:var(
 .pill .d{width:7px;height:7px;border-radius:50%;background:var(--n400);}
 .pill.green .d{background:var(--success);} .pill.blue{background:var(--blue-deep);color:#fff;border-color:var(--blue-deep);} .pill.blue .d{background:var(--blue-bright);}
 
-/* ---------- page heading + KPI grid ---------- */
+/* page heading + KPI grid */
 .pagehead .over{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--blue-deep);}
 .pagehead .title{font-size:28px;font-weight:700;letter-spacing:-.02em;color:var(--midnight);margin-top:4px;
  background:linear-gradient(90deg,#0092ff 0%,#0a4672 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;width:fit-content;}
@@ -180,14 +180,14 @@ section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] p{color:var(
 .delta{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-top:6px;}
 .delta.up{background:#e8f6ef;color:var(--success);} .delta.down{background:#fdecec;color:var(--danger);} .delta.flat{background:var(--n100);color:var(--n500);}
 
-/* ---------- key insight strip (one-line live summary) ---------- */
+/* key insight strip (one-line live summary) */
 .insight{display:flex;gap:10px;align-items:flex-start;background:var(--blue-pale);border:1px solid var(--blue-light);border-radius:var(--r-md);
  padding:13px 16px;margin:0 0 16px;font-size:13.5px;line-height:1.5;color:var(--ink);}
 .insight .tag{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.06em;
  text-transform:uppercase;color:var(--blue-deep);padding-top:2px;}
 .insight b{color:var(--midnight);}
 
-/* ---------- cards ---------- */
+/* cards  */
 [data-testid="stPlotlyChart"],[data-testid="stDataFrame"],[class*="st-key-card"]{background:#fff;border:1px solid var(--n200);
  border-radius:var(--r-md);box-shadow:var(--shadow-sm);padding:14px 16px;transition:box-shadow .2s var(--ease);}
 [data-testid="stPlotlyChart"]:hover,[class*="st-key-card"]:hover{box-shadow:var(--shadow-md);}
@@ -211,7 +211,7 @@ section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] p{color:var(
 .chip.amber{background:#fdf3e0;color:var(--warning);} .chip.amber .d{background:var(--warning);}
 .chip.gray{background:var(--n100);color:var(--n500);} .chip.gray .d{background:var(--n400);}
 
-/* ---------- tabs: underline style ---------- */
+/* tabs: underline style */
 [data-testid="stTabs"] [role="tablist"]{gap:28px;border-bottom:1px solid var(--n200);background:transparent;}
 [data-testid="stTab"]{padding:10px 2px!important;background:transparent!important;position:relative;}
 [data-testid="stTab"] p{font-weight:600!important;font-size:14px!important;color:var(--n500)!important;}
@@ -234,8 +234,7 @@ def page_style():
 
 def topbar(title, sub, pills=()):
     ph = "".join(f'<span class="pill {c}"><span class="d"></span>{t}</span>' for t, c in pills)
-    st.markdown(f'<div class="topbar"><div class="brand"><div class="logo">P</div><div class="vr"></div>'
-                f'<div><h1>{title}</h1><div class="sub">{sub}</div></div></div>'
+    st.markdown(f'<div><h1>{title}</h1><div class="sub">{sub}</div></div></div>'
                 f'<div class="right">{ph}</div></div>', unsafe_allow_html=True)
 
 
