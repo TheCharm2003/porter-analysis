@@ -1,6 +1,6 @@
 import streamlit as st
 
-from lib import enps, hero, load_dq, load_enps, load_recruitment, page_style, section, stat, tone, topbar
+from lib import enps, hero, load_dq, load_enps, load_recruitment, page_style, section, stat, summary, tone, topbar
 
 st.set_page_config(page_title="Porter People Analytics", page_icon="📊", layout="wide")
 page_style()
@@ -23,6 +23,10 @@ hero("Porter · People Analytics · FY26 H1", "People scorecard",
       (f"{f['TTF (days)'].median():.0f} d", "Median time to fill"),
       (f"{sla:.0f}%", "Filled within SLA", "below 85%" if sla < 85 else "on track", "down" if sla < 85 else "up"),
       (f"{int((q['SLA Status (recalc)'] == 'Open - Breached').sum())}", "Open reqs past SLA")])
+
+summary(f"eNPS moved <b>{ea:.1f} → {eo:.1f}</b>; the drop is concentrated in the Intercity reorg team and city-hub "
+        f"new joiners. Hiring fills in a median <b>{f['TTF (days)'].median():.0f} days</b>, but <b>{100 - sla:.0f}%</b> of fills "
+        "miss SLA, mostly after a failed first slate.")
 
 c1, c2, c3 = st.columns(3)
 with c1.container(key="card_enps"):

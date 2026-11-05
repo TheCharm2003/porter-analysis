@@ -6,7 +6,7 @@ import streamlit as st
 
 from lib import (C_APR, C_MID, C_NEG, C_OCT, C_POS, COMPA_ORDER, GRADE_ORDER, MIN_N, Q_LABELS, TENURE_ORDER, WAVES,
                  WAVE_COLORS, apply_filters, enps, enps_table, hbar, hero, load_enps, multiselect_filter, page_style,
-                 plotly_layout, section, sort_segments, stat, tone, topbar)
+                 plotly_layout, section, sort_segments, stat, summary, tone, topbar)
 
 st.set_page_config(page_title="Employee Sentiment · Porter", page_icon="💬", layout="wide")
 page_style()
@@ -66,6 +66,34 @@ hero("Porter · Pulse survey · Wave 2 vs Wave 1", "Employee Net Promoter Score"
       ("–" if pd.isna(det) else f"{det:.0f}%", "Detractors Oct")])
 if any(sel[c] for c in RESP_ONLY):
     st.caption("Response rate ignores respondent-level filters (tenure, manager change), which are not defined for non-respondents.")
+
+# ---- live one-line summary (recalculates with filters)
+def _enps_summary():
+    if pd.isna(eo):
+        return "Not enough October responses in this selection to summarise."
+    parts = [f"eNPS is <b>{eo:.1f}</b> in Oct" + ("" if pd.isna(ea) else f" vs {ea:.1f} in Apr (<b>{eo - ea:+.1f} pts</b>)")
+             + f", n = {no_}."]
+    worst = None
+    for dim in ["Thread", "Function", "Location", "Tenure Band", "Compa Band"]:
+        if sel.get(dim) and len(sel[dim]) == 1:
+            continue
+        t = enps_table(ro, [dim])
+        t = t[t["n"] >= max(MIN_N, 10)]
+        if len(t) > 1:
+            row = t.loc[t["eNPS"].idxmin()]
+            if worst is None or row["eNPS"] < worst[2]:
+                worst = (dim, row[dim], row["eNPS"], int(row["n"]))
+    if worst:
+        parts.append(f"Weakest pocket: <b>{worst[0]} = {worst[1]}</b> at <b>{worst[2]:.0f}</b> (n {worst[3]}).")
+    if len(ra) and len(ro):
+        chg = (ro[list(Q_LABELS)].mean() - ra[list(Q_LABELS)].mean()).rename(index=Q_LABELS)
+        k = chg.idxmin()
+        if chg[k] < 0:
+            parts.append(f"Biggest item drop: <b>{k}</b> ({chg[k]:+.2f}).")
+    return " ".join(parts)
+
+
+summary(_enps_summary())
 
 tab1, tab2, tab3, tab4 = st.tabs(["Wave comparison", "Drill-down", "Drivers", "Attrition link"])
 

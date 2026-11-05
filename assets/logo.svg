@@ -1,6 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="240" height="48" viewBox="0 0 240 48">
-  <rect x="2" y="3" width="42" height="42" rx="10" fill="#ffffff"/>
-  <text x="23" y="33" text-anchor="middle" font-family="Manrope, Segoe UI, Arial, sans-serif" font-size="24" font-weight="800" fill="#1370bb">P</text>
-  <text x="56" y="22" font-family="Manrope, Segoe UI, Arial, sans-serif" font-size="17" font-weight="800" fill="#ffffff">Porter</text>
-  <text x="56" y="40" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#8f9ac2">People Analytics · FY26</text>
+  <defs><radialGradient id="g" cx="30%" cy="30%" r="80%"><stop offset="0" stop-color="#01b8fb"/><stop offset="1" stop-color="#066db8"/></radialGradient></defs>
+  <rect x="2" y="5" width="38" height="38" rx="10" fill="url(#g)"/>
+  <text x="21" y="32" text-anchor="middle" font-family="DM Sans, Segoe UI, Arial, sans-serif" font-size="21" font-weight="800" fill="#ffffff">P</text>
+  <text x="52" y="22" font-family="DM Sans, Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#030c25">Porter</text>
+  <text x="52" y="39" font-family="DM Sans, Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#6b7585">People Analytics · FY26</text>
 </svg>

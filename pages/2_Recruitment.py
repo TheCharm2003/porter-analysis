@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from lib import (C_APR, C_MID, C_NEG, C_OCT, C_POS, C_TEAL, GRADE_ORDER, NAVY, apply_filters, hbar, hero,
-                 load_recruitment, multiselect_filter, page_style, plotly_layout, section, sort_segments, stat, topbar)
+                 load_recruitment, multiselect_filter, page_style, plotly_layout, section, sort_segments, stat, summary, topbar)
 
 st.set_page_config(page_title="Recruitment · Porter", page_icon="🧲", layout="wide")
 page_style()
@@ -59,6 +59,29 @@ hero("Porter · Talent Acquisition · FY26 requisitions", "Hiring scorecard",
       ("–" if pd.isna(acc_rate) else f"{acc_rate:.0f}%", f"Offer acceptance ({len(offers)})"),
       (f"{int(c['Joined'].sum())}", "Joiners"),
       (f"₹{q['Agency Fee (INR)'].sum() / 1e5:.1f}L", "Agency fees")])
+
+# ---- live one-line summary (recalculates with filters)
+def _rec_summary():
+    if not len(f):
+        return f"No filled requisitions in this selection; {len(open_q)} still open, {ob} past SLA."
+    parts = [f"<b>{len(f)}</b> of {len(q)} reqs filled in a median <b>{f['TTF (days)'].median():.0f} days</b>, "
+             f"<b>{sla:.0f}%</b> within SLA."]
+    br = f[f["Within SLA (recalc)"].astype(float) == 0]
+    if len(br):
+        applied = br["Hired Candidate"].map(c_all.set_index("Candidate ID")["Applied On"])
+        restart = ((applied - br["Req Raised On"]).dt.days > 20).mean() * 100
+        parts.append(f"<b>{restart:.0f}%</b> of the {len(br)} breaches came from a restarted search.")
+    g = f.groupby("Grade")["TTF (days)"].agg(["median", "size"])
+    g = g[g["size"] >= 3]
+    if len(g) > 1:
+        parts.append(f"Slowest grade: <b>{g['median'].idxmax()}</b> ({g['median'].max():.0f} d, n {int(g.loc[g['median'].idxmax(), 'size'])}).")
+    if len(offers):
+        dec = (offers["Offer Status"] == "Declined").mean() * 100
+        parts.append(f"Offer decline rate <b>{dec:.0f}%</b>.")
+    return " ".join(parts)
+
+
+summary(_rec_summary())
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["Monthly trends", "Drill-down", "Funnel & sources", "Where time goes",
                                          "Recruiters & interviewers"])
@@ -156,7 +179,7 @@ with tab3:
                   ("R2 interview", c["Reached R2"].sum()), ("Offer", c["Reached Offer"].sum()),
                   ("Accepted", c["Offer Accepted"].sum()), ("Joined", c["Joined"].sum())]
         fig = go.Figure(go.Funnel(y=[s for s, _ in stages], x=[n for _, n in stages], textinfo="value+percent previous",
-                                  marker_color=[NAVY, "#1b2f5a", "#27508e", "#1f60a0", C_OCT, "#3d8fd0", C_TEAL, "#1e8e5a"]))
+                                  marker_color=["#0a4672", "#0d558b", "#066db8", "#009bd9", "#01b8fb", "#4aa9ef", "#8ec9f5", "#1f8a5b"]))
         fig.update_layout(title="Candidate funnel (stage reached)")
         st.plotly_chart(plotly_layout(fig, 420, legend=False), width="stretch")
     with c2:
