@@ -14,7 +14,7 @@ ea, eo = enps(a), enps(o)
 sla = f["Within SLA (recalc)"].astype(float).mean() * 100
 
 topbar("Overview", "Executive summary across sentiment and hiring",
-       [("Data as of 31-Oct-2026", "green"), ("Synthetic data", "")])
+       [])
 hero("Porter · People Analytics · FY26 H1", "People scorecard",
      "Employee sentiment from the April and October 2026 pulse surveys, linked to HRMS records, alongside Talent "
      "Acquisition performance for requisitions raised this financial year.",
@@ -38,7 +38,7 @@ with c1.container(key="card_enps"):
 with c2.container(key="card_rec"):
     st.markdown('<div class="card-title">Recruitment <span class="hint">FY26 requisitions</span></div>',
                 unsafe_allow_html=True)
-    st.markdown("Monthly hiring trends, time to fill and SLA drill-down, funnel and source yield, stage timings, "
+    st.markdown("Monthly hiring trends, time to fill and SLA drill-down, funnel and source yield, "
                 "recruiter and interviewer scorecards.")
     st.page_link("pages/2_Recruitment.py", label="Open dashboard →")
 with c3.container(key="card_dq"):
@@ -58,14 +58,13 @@ stat(k[2], "Offer acceptance", f"{(c[c['Reached Offer']]['Offer Status'] == 'Acc
      f"{int(c['Reached Offer'].sum())} offers", "amber")
 stat(k[3], "Agency fees FY26", f"₹{q['Agency Fee (INR)'].sum() / 1e5:.1f}L", "8.33% of joiner CTC", "gray")
 
-section("How to use")
+section("Notes")
 with st.container(key="card_howto"):
     st.markdown(
         """
-- **Filters** live in the sidebar on each page. Leave a filter empty to include everything. Every number is
-  recalculated from the filtered rows; nothing is pre-aggregated.
+- **Filters** live in the sidebar on each page. Leave a filter empty to include everything. 
 - **Drill-down:** pick a *Level 1* dimension, select one segment, then pick a *Level 2* dimension.
-- **Small segments:** groups with fewer than 5 responses are hidden from sentiment charts by default.
+- **Small segments:** Groups with fewer than 5 responses are hidden from sentiment charts by default.
 - **Definitions:** eNPS = % promoters (9–10) − % detractors (0–6) on Q1. Time to fill = *Req Raised On* → hired
   candidate's *Offer Response On*. SLA = 30 / 45 / 60 days for TBA–G2 / G3–G5 / G6+.
 """

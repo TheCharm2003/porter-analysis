@@ -7,7 +7,7 @@ page_style()
 dq = load_dq()
 
 topbar("Data-quality register", "Every check run by clean.py on the raw exports",
-       [("Data as of 31-Oct-2026", "green")])
+       [])
 found = dq[dq["rows_affected"] > 0]
 hero("Porter · Data preparation", "Cleaning & validation log",
      "What was found in each raw export, how many rows it touched, and how it was treated. Full assumptions are in "

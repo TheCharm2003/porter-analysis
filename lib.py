@@ -156,9 +156,6 @@ section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] p{color:var(
 /* ---------- header bar ---------- */
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;background:#fff;border:1px solid var(--n200);
  border-radius:var(--r-md);padding:12px 20px;margin-bottom:16px;box-shadow:var(--shadow-xs);}
-.topbar .brand{display:flex;align-items:center;gap:14px;min-width:0;}
-.topbar .logo{width:34px;height:34px;border-radius:9px;background:radial-gradient(circle at 30% 30%,#01b8fb 0%,#066db8 100%);
- color:#fff;font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .topbar .vr{width:1px;height:30px;background:var(--n200);}
 .topbar h1{font-size:16px!important;font-weight:700!important;margin:0!important;padding:0!important;line-height:1.1!important;}
 .topbar .sub{font-size:12px;color:var(--n500);margin-top:2px;}
@@ -258,7 +255,7 @@ def summary(text):
     """One-line key insight that recalculates with the current filters."""
     st.markdown('<div class="insight rd-fade"><span class="tag"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" '
                 'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 '
-                '0 0 0-4 12.7c.5.4.8 1 .9 1.6h6.2c.1-.6.4-1.2.9-1.6A7 7 0 0 0 12 2z"/></svg>Key insight</span>'
+                '0 0 0-4 12.7c.5.4.8 1 .9 1.6h6.2c.1-.6.4-1.2.9-1.6A7 7 0 0 0 12 2z"/></svg></span>'
                 f'<span>{text}</span></div>', unsafe_allow_html=True)
 
 
